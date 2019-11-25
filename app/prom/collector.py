@@ -3,7 +3,7 @@ Collect metrics
 """
 import logging
 
-from cx_Oracle import InterfaceError, DatabaseError
+from cx_Oracle import InterfaceError
 
 from app.prom.database import util as db_util
 
@@ -25,14 +25,19 @@ class Collector:
         with app.app_context():
             LOGGER.info("Start collecting metrics")
             try:
-                with db_util.get_connection() as conn:
+                if db_util.is_port_open():
+                    with db_util.get_connection() as conn:
+                        for metric in self.metrics:
+                            LOGGER.debug("collect %s", metric)
+                            if hasattr(metric, 'query'):
+                                result = db_util.get_query_result(conn, metric.query)
+                                metric.collect(result)
+                            else:
+                                metric.collect(app)
+                else:
                     for metric in self.metrics:
-                        LOGGER.debug("collect %s", metric)
-                        if hasattr(metric, 'query'):
-                            result = db_util.get_query_result(conn, metric.query)
-                            metric.collect(result)
-                        else:
-                            metric.collect()
+                        if hasattr(metric, 'is_up_metric'):
+                            metric.collect(app)
             except InterfaceError as e:
                 LOGGER.error("Exception when collecting metrics: %s",
                              str(e),

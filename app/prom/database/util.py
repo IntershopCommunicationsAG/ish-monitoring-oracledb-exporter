@@ -1,9 +1,20 @@
 import logging
+import socket
 
 from cx_Oracle import connect, makedsn, DatabaseError, InterfaceError
 from flask import current_app as app
 
 LOGGER = logging.getLogger(__name__)
+
+
+def is_port_open():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.connect((app.config["SERVER"], int(app.config["PORT"])))
+        s.shutdown(2)
+        return True
+    except:
+        return False
 
 
 def get_connection():
