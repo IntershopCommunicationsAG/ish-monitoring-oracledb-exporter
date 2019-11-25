@@ -10,11 +10,13 @@ class TestCollector(TestCase):
 
     @mock.patch('app.prom.collector.db_util.get_query_result')
     @mock.patch('app.prom.collector.db_util.get_connection')
-    def test_should_collect(self, mock_connection, mock_query_result):
+    @mock.patch('app.prom.collector.db_util.is_port_open')
+    def test_should_collect(self, mock_port_open, mock_connection, mock_query_result):
         app = MagicMock()
         collector_init = collector.Collector([MagicMock(), ])
         collector_init.collect(app)
 
+        mock_port_open.assert_called_once()
         mock_connection.assert_called_once()
         self.assertEqual(mock_query_result.call_count, len(collector_init.metrics))
 
