@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  ish-monitoring-oracledb-exporter:
+    build:
+      context: .
+    ports:
+      - "8001:8000"
+    environment:
+      - ORACLE_SERVER=jqadb7.qa.j.intershop.de
+      - ORACLE_PORT=1521
+      - ORACLE_SERVICE=ORCL12
+      - ORACLE_USERNAME=system
+      - ORACLE_PASSWORD=intershop
+      - FLASK_CONFIG=config.DevelopmentConfig
+      - COLLECT_METRICS_INTERVAL_SEC=15

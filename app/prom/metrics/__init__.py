@@ -1,0 +1,11 @@
+"""
+Import all metrics so they are conveniently accessed by AbstractMetric.__subclasses__()
+"""
+
+import pkgutil
+
+# noinspection PyUnboundLocalVariable
+__path__ = pkgutil.extend_path(__path__, __name__)
+for imp, module, ispackage in pkgutil.walk_packages(path=__path__,
+                                                    prefix=__name__ + '.'):
+    __import__(module)

@@ -1,0 +1,39 @@
+version: '3'
+
+volumes:
+  prometheus_data: {}
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.13.1
+    volumes:
+      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+    depends_on:
+      - ish-monitoring-oracledb-exporter
+    ports:
+      - 9090:9090
+  grafana:
+    image: grafana/grafana
+    ports:
+     - "3000:3000"
+    depends_on:
+      - prometheus
+  ish-monitoring-oracledb-exporter:
+    build:
+      context: .
+    ports:
+      - "8001:8000"
+    environment:
+      - ORACLE_SERVER=jqadb7.qa.j.intershop.de
+      - ORACLE_PORT=1521
+      - ORACLE_SERVICE=ORCL12
+      - ORACLE_USERNAME=system
+      - ORACLE_PASSWORD=intershop
+      - FLASK_CONFIG=config.DevelopmentConfig
+      - COLLECT_METRICS_INTERVAL_SEC=15

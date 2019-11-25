@@ -1,0 +1,42 @@
+global:
+  scrape_interval: 30s
+
+scrape_configs:
+  - job_name: 'k8s-pre'
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets: ['oracle-prom-exporter_oracle-exporter_1:8000']
+        labels:
+          environment: 'k8s-pre-c1'
+          instance: 'prometheus-oracle-exporter-pre-6cbb67488-zzzd4'
+          cluster_name: 'prometheus-oracle-exporter-pre-6cbb67488'
+          release: 'prometheus-oracle-exporter-pre'
+          app: 'prometheus-oracle-exporter'
+          kubernetes_namespace: 'bi'
+          kubernetes_pod_node_name: 'k8s-bi-pre-c1-03'
+          kubernetes_pod_name: 'prometheus-oracle-exporter-pre-6cbb67488-zzzd4'
+  - job_name: 'k8s-live'
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets: ['oracle-prom-exporter_oracle-exporter_1:8000']
+        labels:
+          environment: 'k8s-live-c1'
+          instance: 'prometheus-oracle-exporter-live-6cbb67488-zzzd4'
+          cluster_name: 'prometheus-oracle-exporter-live-6cbb67488'
+          release: 'prometheus-oracle-exporter-live'
+          app: 'prometheus-oracle-exporter'
+          kubernetes_namespace: 'bi'
+          kubernetes_pod_node_name: 'k8s-bi-live-c1-03'
+          kubernetes_pod_name: 'prometheus-oracle-exporter-live-6cbb67488-zzzd4'
+  - job_name: "prometheusDBExporter"
+    scrape_interval: 1m
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ish-monitoring-oracledb-exporter:8000"]
+        labels:
+          tenant: 'INTERSHOP'
+          instance: 'localhost:9100'
+          environment: 'mine'
