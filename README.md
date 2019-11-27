@@ -10,9 +10,6 @@ by using promql `{__name__=~".+",app="prometheus-oracle-exporter"}`
 
 To rebuild the image please run `docker-compose up --build`
 
-The default SQL Server is local. If wanted to test with real data, it has to
-either pull the data from production or pointing the SQL Server connection to the production one
-
 ## Setting up
 
 ##### Initialize a virtual environment
