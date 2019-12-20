@@ -10,11 +10,11 @@ import os
 class BaseConfig:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    SERVER = os.getenv('ORACLE_SERVER', 'localhost')
+    SERVER = os.getenv('ORACLE_SERVER', 'jqadb7.qa.j.intershop.de')
     PORT = os.getenv('ORACLE_PORT', 1521)
     SERVICE = os.getenv('ORACLE_SERVICE', 'ORCL12')
     USERNAME = os.getenv('ORACLE_USERNAME', 'system')
-    PASSWORD = os.getenv('ORACLE_PASSWORD', 'YourStrong!Passw0rd')
+    PASSWORD = os.getenv('ORACLE_PASSWORD', 'intershop')
     COLLECT_METRICS_INTERVAL_SEC = int(
         os.getenv('COLLECT_METRICS_INTERVAL_SEC', 120))
     DEBUG = False

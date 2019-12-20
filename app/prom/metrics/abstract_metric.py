@@ -26,6 +26,7 @@ class AbstractMetric:
 
     def cleanName(self, original_name):
         s = original_name.replace(" ", "_", -1)  # Remove spaces
+        s = s.replace("*", "_", -1)  # Remove star
         s = s.replace("(", "", -1)  # Remove open parenthesis
         s = s.replace(")", "", -1)  # Remove close parenthesis
         s = s.replace("/", "", -1)  # Remove forward addslashes

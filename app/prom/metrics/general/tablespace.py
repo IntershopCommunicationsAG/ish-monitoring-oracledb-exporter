@@ -4,102 +4,81 @@ from app.prom.metrics.abstract_metric import AbstractMetric
 
 TABLESPACE = '''tablespace'''
 TYPE = '''type'''
-BYTES = '''bytes'''
+CURR_BYTES = '''curr_bytes'''
+USED_BYTES = '''used_bytes'''
 MAX_BYTES = '''max_bytes'''
 FREE_BYTES = '''free'''
+AUTOEXTENSIBLE = '''autoextensible'''
 
 class Tablespace(AbstractMetric):
     def __init__(self, registry):
         """
         Initialize query and metrics
         """
-        self.bytes_metric = Gauge('oracledb_tablespace_bytes',
-                                  'Generic counter metric of tablespaces bytes in Oracle.',
-                                  labelnames=[TABLESPACE, TYPE],
+        self.curr_bytes_metric = Gauge('oracledb_tablespace_curr_bytes',
+                                  'Generic counter metric of tablespaces current bytes in Oracle.',
+                                  labelnames=[TABLESPACE],
+                                  registry=registry)
+
+        self.used_bytes_metric = Gauge('oracledb_tablespace_used_bytes',
+                                  'Generic counter metric of tablespaces used bytes in Oracle.',
+                                  labelnames=[TABLESPACE],
                                   registry=registry)
 
         self.max_bytes_metric = Gauge('oracledb_tablespace_max_bytes',
                                       'Generic counter metric of tablespaces max bytes in Oracle.',
-                                      labelnames=[TABLESPACE, TYPE],
+                                      labelnames=[TABLESPACE, AUTOEXTENSIBLE],
                                       registry=registry)
 
         self.free_bytes_metric = Gauge('oracledb_tablespace_free',
                               'Generic counter metric of tablespaces free bytes in Oracle.',
-                              labelnames=[TABLESPACE, TYPE],
+                              labelnames=[TABLESPACE],
                               registry=registry)
 
         self.query = '''
-          SELECT
-            Z.name       as %s,
-            dt.contents  as %s,
-            Z.bytes      as %s,
-            Z.max_bytes  as %s,
-            Z.free_bytes as %s
-          FROM
-          (
-            SELECT
-              X.name                   as name,
-              SUM(nvl(X.free_bytes,0)) as free_bytes,
-              SUM(X.bytes)             as bytes,
-              SUM(X.max_bytes)         as max_bytes
-            FROM
-              (
-                SELECT
-                  ddf.tablespace_name as name,
-                  ddf.status as status,
-                  ddf.bytes as bytes,
-                  sum(coalesce(dfs.bytes, 0)) as free_bytes,
-                  CASE
-                    WHEN ddf.maxbytes = 0 THEN ddf.bytes
-                    ELSE ddf.maxbytes
-                  END as max_bytes
-                FROM
-                  sys.dba_data_files ddf,
-                  sys.dba_tablespaces dt,
-                  sys.dba_free_space dfs
-                WHERE ddf.tablespace_name = dt.tablespace_name
-                AND ddf.file_id = dfs.file_id(+)
-                GROUP BY
-                  ddf.tablespace_name,
-                  ddf.file_name,
-                  ddf.status,
-                  ddf.bytes,
-                  ddf.maxbytes
-              ) X
-            GROUP BY X.name
+            SELECT df.tablespace_name AS %s,
+                   Round(df.maxbytes, 2) AS %s,
+                   Round(df.bytes, 2) AS %s,
+                   Round((df.bytes - SUM(fs.bytes)), 2) AS %s,
+                   Round(SUM(fs.bytes), 2) AS %s,
+                   Max(autoextensible) AS %s
+            FROM   dba_free_space fs,
+                   (SELECT tablespace_name,
+                           SUM(bytes)                      bytes,
+                           SUM(Decode(maxbytes, 0, bytes,
+                                                maxbytes)) maxbytes,
+                           Max(autoextensible)             autoextensible
+                    FROM   dba_data_files
+                    GROUP  BY tablespace_name) df
+            WHERE  fs.tablespace_name (+) = df.tablespace_name
+            GROUP  BY df.tablespace_name,
+                      df.bytes,
+                      df.maxbytes
             UNION ALL
-            SELECT
-              Y.name                   as name,
-              MAX(nvl(Y.free_bytes,0)) as free_bytes,
-              SUM(Y.bytes)             as bytes,
-              SUM(Y.max_bytes)         as max_bytes
-            FROM
-              (
-                SELECT
-                  dtf.tablespace_name as name,
-                  dtf.status as status,
-                  dtf.bytes as bytes,
-                  (
-                    SELECT
-                      ((f.total_blocks - s.tot_used_blocks)*vp.value)
-                    FROM
-                      (SELECT tablespace_name, sum(used_blocks) tot_used_blocks FROM gv$sort_segment WHERE  tablespace_name!='DUMMY' GROUP BY tablespace_name) s,
-                      (SELECT tablespace_name, sum(blocks) total_blocks FROM dba_temp_files where tablespace_name !='DUMMY' GROUP BY tablespace_name) f,
-                      (SELECT value FROM v$parameter WHERE name = 'db_block_size') vp
-                    WHERE f.tablespace_name=s.tablespace_name AND f.tablespace_name = dtf.tablespace_name
-                  ) as free_bytes,
-                  CASE
-                    WHEN dtf.maxbytes = 0 THEN dtf.bytes
-                    ELSE dtf.maxbytes
-                  END as max_bytes
-                FROM
-                  sys.dba_temp_files dtf
-              ) Y
-            GROUP BY Y.name
-          ) Z, sys.dba_tablespaces dt
-          WHERE
-            Z.name = dt.tablespace_name
-        ''' % (TABLESPACE, TYPE, BYTES, MAX_BYTES, FREE_BYTES)
+            SELECT df.tablespace_name AS %s,
+                   Round(df.maxbytes, 2) AS %s,
+                   Round(df.bytes, 2) AS %s,
+                   Round((df.bytes - SUM(fs.bytes)), 2) AS %s,
+                   Round(SUM(fs.bytes), 2) AS %s,
+                   Max(autoextensible) AS %s
+            FROM   (SELECT tablespace_name,
+                           bytes_used bytes
+                    FROM   v$temp_space_header
+                    GROUP  BY tablespace_name,
+                              bytes_free,
+                              bytes_used) fs,
+                   (SELECT tablespace_name,
+                           SUM(bytes)                      bytes,
+                           SUM(Decode(maxbytes, 0, bytes,
+                                                maxbytes)) maxbytes,
+                           Max(autoextensible)             autoextensible
+                    FROM   dba_temp_files
+                    GROUP  BY tablespace_name) df
+            WHERE  fs.tablespace_name (+) = df.tablespace_name
+            GROUP  BY df.tablespace_name,
+                      df.bytes,
+                      df.maxbytes
+        ''' % (TABLESPACE, MAX_BYTES, CURR_BYTES, USED_BYTES, FREE_BYTES, AUTOEXTENSIBLE, TABLESPACE, MAX_BYTES, CURR_BYTES, USED_BYTES, FREE_BYTES, AUTOEXTENSIBLE)
 
         super().__init__()
 
@@ -110,14 +89,18 @@ class Tablespace(AbstractMetric):
         :return:
         """
         for row in rows:
-            self.bytes_metric \
-                .labels(tablespace=row[TABLESPACE], type=row[TYPE]) \
-                .set(row[BYTES])
+            self.curr_bytes_metric \
+                .labels(tablespace=row[TABLESPACE]) \
+                .set(row[CURR_BYTES])
+
+            self.used_bytes_metric \
+                .labels(tablespace=row[TABLESPACE]) \
+                .set(row[USED_BYTES])
 
             self.max_bytes_metric \
-                .labels(tablespace=row[TABLESPACE], type=row[TYPE]) \
+                .labels(tablespace=row[TABLESPACE], autoextensible=row[AUTOEXTENSIBLE]) \
                 .set(row[MAX_BYTES])
 
             self.free_bytes_metric \
-                .labels(tablespace=row[TABLESPACE], type=row[TYPE]) \
+                .labels(tablespace=row[TABLESPACE]) \
                 .set(row[FREE_BYTES])
