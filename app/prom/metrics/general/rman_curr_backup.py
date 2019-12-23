@@ -4,7 +4,6 @@ from app.prom.metrics.abstract_metric import AbstractMetric
 
 SID = '''sid'''
 CONTEXT = '''context'''
-START_TIME = '''start_time'''
 TIME_REMAINING = '''time_remaining_sec'''
 SOFAR = '''sofar_bytes'''
 TOTALWORK = '''totalwork_bytes'''
@@ -46,7 +45,6 @@ class RmanCurrBackup(AbstractMetric):
         SELECT
          o.sid AS %s
          , o.context AS %s
-         , o.START_TIME AS %s
          , o.TIME_REMAINING AS %s
          , o.sofar AS %s
          , o.totalwork AS %s
@@ -55,7 +53,7 @@ class RmanCurrBackup(AbstractMetric):
         AND o.opname NOT LIKE '%%aggregate%%'
         AND o.totalwork != 0
         AND o.sofar <> o.totalwork
-        ''' % (SID, CONTEXT, START_TIME, TIME_REMAINING, SOFAR, TOTALWORK)
+        ''' % (SID, CONTEXT, TIME_REMAINING, SOFAR, TOTALWORK)
 
         super().__init__()
 
@@ -67,11 +65,11 @@ class RmanCurrBackup(AbstractMetric):
         """
         for row in rows:
             self.time_remaining_metric \
-                .labels(sid=row[SID], context=row[CONTEXT], start_time=row[START_TIME]) \
+                .labels(sid=row[SID], context=row[CONTEXT]) \
                 .set(row[TIME_REMAINING])
             self.sofar_metric \
-                .labels(sid=row[SID], context=row[CONTEXT], start_time=row[START_TIME]) \
+                .labels(sid=row[SID], context=row[CONTEXT]) \
                 .set(row[SOFAR])
             self.total_work_metric \
-                .labels(sid=row[SID], context=row[CONTEXT], start_time=row[START_TIME]) \
+                .labels(sid=row[SID], context=row[CONTEXT]) \
                 .set(row[TOTALWORK])
