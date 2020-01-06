@@ -1,0 +1,15 @@
+apiVersion: v1
+appVersion: "0.1.0"
+description: A Helm chart for prometheus oracle-exporter
+name: ish-monitoring-oracledb-exporter
+version: 1.1.1
+home: https://dev.azure.com/ishcloudops/ish-monitoring/_git/ish-monitoring-oracledb-exporter
+sources:
+- https://dev.azure.com/ishcloudops/ish-monitoring/_git/ish-monitoring-oracledb-exporter
+keywords:
+- oracle
+- prometheus
+- exporter
+maintainers:
+- email: khauser@intershop.com
+  name: Karsten Ludwig Hauser

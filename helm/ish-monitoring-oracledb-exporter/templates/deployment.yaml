@@ -1,0 +1,90 @@
+{{- if and .Values.oracle.passwordSecret .Values.oracle.password -}}
+{{ fail (printf "ERROR: only one of .Values.oracle.passwordSecret and .Values.oracle.password must be defined") }}
+{{- end -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "ish-monitoring-oracledb-exporter.fullname" . }}
+  labels:
+    app: {{ template "ish-monitoring-oracledb-exporter.name" . }}
+    chart: {{ template "ish-monitoring-oracledb-exporter.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "ish-monitoring-oracledb-exporter.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "ish-monitoring-oracledb-exporter.name" . }}
+        release: {{ .Release.Name }}
+{{- if .Values.podLabels }}
+{{ toYaml .Values.podLabels | trim | indent 8 }}
+{{- end }}
+    spec:
+      serviceAccountName: {{ template "ish-monitoring-oracledb-exporter.serviceAccountName" . }}
+      containers:
+        - name: {{ .Chart.Name }}
+          env:
+          - name: ORACLE_SERVER
+            value: {{ .Values.oracle.server }}
+          - name: ORACLE_PORT
+            value: {{ .Values.oracle.port | quote }}
+          - name: ORACLE_SERVICE
+            value: {{ .Values.oracle.service }}
+          - name: FLASK_CONFIG
+            value: {{ .Values.flask.config }}
+          - name: COLLECT_METRICS_INTERVAL_SEC
+            value: {{ .Values.collectMetricsIntervalSec | quote }}
+          - name: ORACLE_USERNAME
+            value: {{ .Values.oracle.user }}
+          - name: ORACLE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+          {{- if .Values.oracle.passwordSecret }}
+                name: {{ .Values.oracle.passwordSecret.name }}
+                key: {{ .Values.oracle.passwordSecret.key }}
+          {{- else }}
+                name: {{ template "ish-monitoring-oracledb-exporter.fullname" . }}
+                key: oracle_password
+          {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+{{- with .Values.extraContainers }}
+{{ tpl . $ | indent 8 }}
+{{- end }}
+      securityContext:
+{{ toYaml .Values.securityContext | indent 8 }}
+     {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+      volumes:
+{{- with .Values.extraVolumes }}
+{{ tpl . $ | indent 6 }}
+{{- end }}

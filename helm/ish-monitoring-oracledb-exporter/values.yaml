@@ -1,0 +1,94 @@
+# Default values for ish-monitoring-oracledb-exporter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: ishcloudopsicp.azurecr.io/intershop/ish-monitoring-oracledb-exporter
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8000
+  targetPort: 8000
+  name: http
+  labels: {}
+  annotations: {}
+
+serviceMonitor:
+  # When set true then use a ServiceMonitor to configure scraping
+  enabled: false
+  # Set the namespace the ServiceMonitor should be deployed
+  # namespace: monitoring
+  # Set how frequently Prometheus should scrape
+  # interval: 30s
+  # Set path to cloudwatch-exporter telemtery-path
+  # telemetryPath: /metrics
+  # Set labels for the ServiceMonitor, use this to define your scrape label for Prometheus Operator
+  # labels:
+  # Set timeout for scrape
+  # timeout: 10s
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #    memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+  # Specifies whether a PodSecurityPolicy should be created
+  pspEnabled: true
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: true
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+
+securityContext: {}
+  # The securityContext this Pod should use. See https://kubernetes.io/docs/concepts/policy/security-context/ for more.
+  # runAsUser: 65534
+
+flask:
+  config: config.DevelopmentConfig
+
+collectMetricsIntervalSec: 15
+
+oracle:
+  server: <someserver>
+  port: "1521"
+  service: ORCL12
+  user: system
+  # Only one of password and passwordSecret can be specified
+  password: <somepassword>
+  passwordSecret: {}
+  # Secret name
+  #  name:
+  # Password key inside secret
+  #  key:
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+annotations: {}
+
+podLabels: {}
+
+# Additional sidecar containers, e. g. for a database proxy, such as Google's cloudsql-proxy
+extraContainers: |
+
+# Additional volumes, e. g. for secrets used in an extraContainer
+extraVolumes: |
