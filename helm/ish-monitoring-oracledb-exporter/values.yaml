@@ -16,6 +16,9 @@ service:
   name: http
   labels: {}
   annotations: {}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8000"
 
 serviceMonitor:
   # When set true then use a ServiceMonitor to configure scraping

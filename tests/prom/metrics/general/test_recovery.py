@@ -3,15 +3,21 @@ from unittest import TestCase
 from prometheus_client.registry import CollectorRegistry
 
 from app.prom.metrics.general.recovery import Recovery, PERCENT_SPACE_USED, PERCENT_SPACE_RECLAIMABLE
+from tests.helpers import setUpApp, with_context
 
 
 class TestRecovery(TestCase):
+
+    def setUp(self):
+        setUpApp(self)
+
+    @with_context
     def test_should_collect(self):
         test_data_1 = {PERCENT_SPACE_USED: 100, PERCENT_SPACE_RECLAIMABLE: 234}
 
         recovery = Recovery(CollectorRegistry())
 
-        recovery.collect(rows=(_ for _ in [test_data_1]))
+        recovery.collect(self.app, rows=(_ for _ in [test_data_1]))
 
         samples = next(iter(recovery.percent_space_used_metric.collect())).samples
         iter_samples = iter(samples)

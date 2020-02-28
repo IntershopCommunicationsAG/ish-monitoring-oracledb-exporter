@@ -31,7 +31,7 @@ class Collector:
                             LOGGER.debug("collect %s", metric)
                             if hasattr(metric, 'query'):
                                 result = db_util.get_query_result(conn, metric.query)
-                                metric.collect(result)
+                                metric.collect(app, result)
                             else:
                                 metric.collect(app)
                 else:

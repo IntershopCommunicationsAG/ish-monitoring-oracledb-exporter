@@ -1,5 +1,6 @@
 from prometheus_client import Gauge
 
+from app.prom.database import util as db_util
 from app.prom.metrics.abstract_metric import AbstractMetric
 
 SID = '''sid'''
@@ -17,16 +18,17 @@ class RmanCurrBackupWaits(AbstractMetric):
         Initialize query and metrics
         """
 
-        self.metric = Gauge('oracledb_rman_curr_backup_event_waiting_time_sec',
-                            'Gauge metric with event waiting times of the current rman backup.',
-                            labelnames=[
-                                'sid',
-                                'client_info',
-                                'sequence',
-                                'event',
-                                'state'
-                            ],
-                            registry=registry)
+        self.metric = Gauge('oracledb_rman_curr_backup_event_waiting_time_sec'
+            , 'Gauge metric with event waiting times of the current rman backup.'
+            , labelnames=['server'
+                          , 'port'
+                          , 'sid'
+                          , 'client_info'
+                          , 'sequence'
+                          , 'event'
+                          , 'state'
+                          ]
+            , registry=registry)
 
         self.query = '''
         SELECT
@@ -45,13 +47,14 @@ class RmanCurrBackupWaits(AbstractMetric):
 
         super().__init__()
 
-    def collect(self, rows):
+    def collect(self, app, rows):
         """
         Collect from the query result
         :param rows: query result
         :return:
         """
-        for row in rows:
-            self.metric \
-                .labels(sid=row[SID], client_info=row[CLIENT_INFO], sequence=row[SEQUENCE], event=self.cleanName(row[EVENT]), state=row[STATE]) \
-                .set(row[WAITING_TIME])
+        with app.app_context():
+            for row in rows:
+                self.metric \
+                    .labels(server=db_util.get_server(), port=db_util.get_port(), sid=row[SID], client_info=row[CLIENT_INFO], sequence=row[SEQUENCE], event=self.cleanName(row[EVENT]), state=row[STATE]) \
+                    .set(row[WAITING_TIME])

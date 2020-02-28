@@ -30,6 +30,14 @@ def get_connection():
     return conn
 
 
+def get_server():
+    return app.config["SERVER"]
+
+
+def get_port():
+    return app.config["PORT"]
+
+
 def makeDictFactory(cursor):
     columnNames = [d[0].lower() for d in cursor.description]
 

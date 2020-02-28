@@ -3,16 +3,21 @@ from unittest import TestCase
 from prometheus_client.registry import CollectorRegistry
 
 from app.prom.metrics.general.activity import Activity, PREFIX, NAME, VALUE
-
+from tests.helpers import setUpApp, with_context
 
 class TestActivity(TestCase):
+
+    def setUp(self):
+        setUpApp(self)
+
+    @with_context
     def test_should_collect(self):
         test_data_1 = {NAME: 'user commits', VALUE: 300}
         test_data_2 = {NAME: 'parse count (total)', VALUE: 3}
 
         activity = Activity(CollectorRegistry())
 
-        activity.collect(rows=(_ for _ in [test_data_1, test_data_2]))
+        activity.collect(self.app, rows=(_ for _ in [test_data_1, test_data_2]))
 
         self.assert_sample_metrics(activity, PREFIX + 'user_commits', test_data_1)
         self.assert_sample_metrics(activity, PREFIX + 'parse_count_total', test_data_2)

@@ -7,7 +7,6 @@ It's pretty standard and shouldn't really be modified, unless you add
 new configurations.
 """
 import os
-import unittest
 
 from flask import current_app
 from flask_testing import TestCase
@@ -32,6 +31,7 @@ class TestDevelopmentConfig(TestCase):
 
 
 class TestTestingConfig(TestCase):
+
     def create_app(self):
         app.config.from_object('config.TestingConfig')
         return app
@@ -43,6 +43,7 @@ class TestTestingConfig(TestCase):
 
 
 class TestProductionConfig(TestCase):
+
     def create_app(self):
         app.config.from_object('config.ProductionConfig')
         return app

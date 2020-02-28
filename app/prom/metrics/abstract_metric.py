@@ -16,7 +16,7 @@ class AbstractMetric:
         Should initialize query and metric
         """
     @abstractmethod
-    def collect(self, rows):
+    def collect(self, app, rows):
         """
         Collect prom from Oracle and set prometheus
         :param rows: sql result

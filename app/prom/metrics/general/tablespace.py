@@ -1,5 +1,6 @@
 from prometheus_client import Gauge
 
+from app.prom.database import util as db_util
 from app.prom.metrics.abstract_metric import AbstractMetric
 
 TABLESPACE = '''tablespace'''
@@ -15,25 +16,25 @@ class Tablespace(AbstractMetric):
         """
         Initialize query and metrics
         """
-        self.curr_bytes_metric = Gauge('oracledb_tablespace_curr_bytes',
-                                  'Generic counter metric of tablespaces current bytes in Oracle.',
-                                  labelnames=[TABLESPACE],
-                                  registry=registry)
+        self.curr_bytes_metric = Gauge('oracledb_tablespace_curr_bytes'
+            , 'Generic counter metric of tablespaces current bytes in Oracle.'
+            , labelnames=['server', 'port', TABLESPACE]
+            , registry=registry)
 
-        self.used_bytes_metric = Gauge('oracledb_tablespace_used_bytes',
-                                  'Generic counter metric of tablespaces used bytes in Oracle.',
-                                  labelnames=[TABLESPACE],
-                                  registry=registry)
+        self.used_bytes_metric = Gauge('oracledb_tablespace_used_bytes'
+            , 'Generic counter metric of tablespaces used bytes in Oracle.'
+            , labelnames=['server', 'port', TABLESPACE]
+            , registry=registry)
 
-        self.max_bytes_metric = Gauge('oracledb_tablespace_max_bytes',
-                                      'Generic counter metric of tablespaces max bytes in Oracle.',
-                                      labelnames=[TABLESPACE, AUTOEXTENSIBLE],
-                                      registry=registry)
+        self.max_bytes_metric = Gauge('oracledb_tablespace_max_bytes'
+            , 'Generic counter metric of tablespaces max bytes in Oracle.'
+            , labelnames=['server', 'port', TABLESPACE, AUTOEXTENSIBLE]
+            , registry=registry)
 
-        self.free_bytes_metric = Gauge('oracledb_tablespace_free',
-                              'Generic counter metric of tablespaces free bytes in Oracle.',
-                              labelnames=[TABLESPACE],
-                              registry=registry)
+        self.free_bytes_metric = Gauge('oracledb_tablespace_free'
+            , 'Generic counter metric of tablespaces free bytes in Oracle.'
+            , labelnames=['server', 'port', TABLESPACE]
+            , registry=registry)
 
         self.query = '''
             SELECT df.tablespace_name AS %s,
@@ -82,25 +83,26 @@ class Tablespace(AbstractMetric):
 
         super().__init__()
 
-    def collect(self, rows):
+    def collect(self, app, rows):
         """
         Collect from the query result
         :param rows: query result
         :return:
         """
-        for row in rows:
-            self.curr_bytes_metric \
-                .labels(tablespace=row[TABLESPACE]) \
-                .set(row[CURR_BYTES])
+        with app.app_context():
+            for row in rows:
+                self.curr_bytes_metric \
+                    .labels(server=db_util.get_server(), port=db_util.get_port(), tablespace=row[TABLESPACE]) \
+                    .set(row[CURR_BYTES])
 
-            self.used_bytes_metric \
-                .labels(tablespace=row[TABLESPACE]) \
-                .set(row[USED_BYTES])
+                self.used_bytes_metric \
+                    .labels(server=db_util.get_server(), port=db_util.get_port(), tablespace=row[TABLESPACE]) \
+                    .set(row[USED_BYTES])
 
-            self.max_bytes_metric \
-                .labels(tablespace=row[TABLESPACE], autoextensible=row[AUTOEXTENSIBLE]) \
-                .set(row[MAX_BYTES])
+                self.max_bytes_metric \
+                    .labels(server=db_util.get_server(), port=db_util.get_port(), tablespace=row[TABLESPACE], autoextensible=row[AUTOEXTENSIBLE]) \
+                    .set(row[MAX_BYTES])
 
-            self.free_bytes_metric \
-                .labels(tablespace=row[TABLESPACE]) \
-                .set(row[FREE_BYTES])
+                self.free_bytes_metric \
+                    .labels(server=db_util.get_server(), port=db_util.get_port(), tablespace=row[TABLESPACE]) \
+                    .set(row[FREE_BYTES])

@@ -3,10 +3,15 @@ from unittest import TestCase
 from prometheus_client.registry import CollectorRegistry
 
 from app.prom.metrics.general.resource import Resource, NAME, CURRENT_UTILIZATION, LIMIT_VALUE
+from tests.helpers import setUpApp, with_context
 
 
 class TestResource(TestCase):
 
+    def setUp(self):
+        setUpApp(self)
+
+    @with_context
     def test_should_collect(self):
         test_data_1 = {NAME: 'test_1', CURRENT_UTILIZATION: 300, LIMIT_VALUE: 100}
         test_data_2 = {NAME: 'test_2', CURRENT_UTILIZATION: 3, LIMIT_VALUE: 1}
@@ -14,7 +19,7 @@ class TestResource(TestCase):
 
         resource = Resource(CollectorRegistry())
 
-        resource.collect(rows=(_ for _ in [test_data_1, test_data_2, test_data_3]))
+        resource.collect(self.app, rows=(_ for _ in [test_data_1, test_data_2, test_data_3]))
 
         samples = next(iter(resource.current_utilization_metric.collect())).samples
         iter_samples = iter(samples)

@@ -3,17 +3,22 @@ from unittest import TestCase
 from prometheus_client.registry import CollectorRegistry
 
 from app.prom.metrics.general.pga import PGA, NAME, VALUE
+from tests.helpers import setUpApp, with_context
 
 
 class TestPGA(TestCase):
 
+    def setUp(self):
+        setUpApp(self)
+
+    @with_context
     def test_should_collect(self):
         test_data_1 = {NAME: 'test_1', VALUE: 100}
         test_data_2 = {NAME: 'test_2', VALUE: 99.995}
 
         pga = PGA(CollectorRegistry())
 
-        pga.collect(rows=(_ for _ in [test_data_1, test_data_2]))
+        pga.collect(self.app, rows=(_ for _ in [test_data_1, test_data_2]))
 
         samples = next(iter(pga.metric.collect())).samples
         iter_samples = iter(samples)

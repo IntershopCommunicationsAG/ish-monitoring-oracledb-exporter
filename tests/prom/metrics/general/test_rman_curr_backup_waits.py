@@ -3,10 +3,15 @@ from unittest import TestCase
 from prometheus_client.registry import CollectorRegistry
 
 from app.prom.metrics.general.rman_curr_backup_waits import RmanCurrBackupWaits, SID, CLIENT_INFO, SEQUENCE, EVENT, STATE, WAITING_TIME
+from tests.helpers import setUpApp, with_context
 
 
 class TestRmanCurrBackupWaits(TestCase):
 
+    def setUp(self):
+        setUpApp(self)
+
+    @with_context
     def test_should_collect(self):
         test_data_1 = {SID: '148', CLIENT_INFO: '', SEQUENCE: '8200', EVENT: 'sql_net_message_from_client', STATE: 'WAITING', WAITING_TIME: 207.01}
         test_data_2 = {SID: '149', CLIENT_INFO: '', SEQUENCE: '8200', EVENT: 'sql_net_message_from_client', STATE: 'WAITING', WAITING_TIME: 1207}
@@ -14,7 +19,7 @@ class TestRmanCurrBackupWaits(TestCase):
 
         resource = RmanCurrBackupWaits(CollectorRegistry())
 
-        resource.collect(rows=(_ for _ in [test_data_1, test_data_2, test_data_3]))
+        resource.collect(self.app, rows=(_ for _ in [test_data_1, test_data_2, test_data_3]))
 
         samples = next(iter(resource.metric.collect())).samples
         iter_samples = iter(samples)

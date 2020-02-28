@@ -24,6 +24,8 @@ class BaseConfig:
 class TestingConfig(BaseConfig):
     DEBUG = True
     TESTING = True
+    SERVER = os.getenv('ORACLE_SERVER', 'my_host')
+    PORT = os.getenv('ORACLE_PORT', 1521)
 
 
 class DevelopmentConfig(BaseConfig):
